@@ -1,0 +1,10 @@
+name: SpawnerMiner
+version: '${project.version}'
+main: net.wuchenyu.spawnerminer.SpawnerMiner
+api-version: '1.17'
+authors: [Wuhenyu]
+Commands:
+  spawner_miner:
+    aliases:
+      - sm
+    usage: "/sm help"

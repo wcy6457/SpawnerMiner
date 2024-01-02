@@ -1,11 +1,10 @@
 package net.wuchenyu.spawnerminer;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -33,44 +32,34 @@ public class Command implements TabExecutor {
 
         String sub = strings[0].toLowerCase();
 
+        if (! (commandSender instanceof Player)) {
+            SpawnerMiner.getInstance().getServer().getConsoleSender()
+                    .sendMessage(ChatColor.RED + "抱歉，不允许控制台使用此命令！");
+        }
+
         if(! commandSender.isOp()) {
             Player player = (Player)commandSender;
             player.sendMessage(ChatColor.RED + "抱歉，仅限op使用此命令");
             return true;
         }
 
-        if (! (commandSender instanceof Player)) {
-            SpawnerMiner.getInstance().getServer().getConsoleSender()
-                    .sendMessage(ChatColor.RED + "抱歉，不允许控制台使用此命令！");
-        }
-
         switch (sub) {
             case "get" : {
-                Player player = (Player)commandSender;
+                Player player = (Player) commandSender;
                 ItemStack itemInMainHand = player.getInventory().getItemInMainHand();
-                if (Objects.nonNull(itemInMainHand) &&
-                                ( itemInMainHand.equals(new ItemStack(Material.DIAMOND_PICKAXE))
-                                || itemInMainHand.equals(new ItemStack(Material.GOLDEN_PICKAXE))
-                                || itemInMainHand.equals(new ItemStack(Material.IRON_PICKAXE))
-                                || itemInMainHand.equals(new ItemStack(Material.WOODEN_PICKAXE))
-                                || itemInMainHand.equals(new ItemStack(Material.NETHERITE_PICKAXE))
-                                || itemInMainHand.equals(new ItemStack(Material.STONE_PICKAXE))
-                        )) {   //判断物品是否为镐子
+                Material materialInHand = itemInMainHand.getType();
+
+                if (isPickaxe(materialInHand)) {
                     ItemMeta itemMeta = itemInMainHand.getItemMeta();
 
-                    //有了meta，就可以调用#getPersistentDataContainer()方法得到持久层容器
-                    PersistentDataContainer dataContainer = itemMeta.getPersistentDataContainer();
-
-                    /**
-                     * 涉及到NamespaceKey的，就一律不能重复
-                     */
-                    //在添加前，先删除
-                    if (dataContainer.has(isSpawnerMiner, PersistentDataType.STRING)) {
-                        //存在
-                        dataContainer.remove(isSpawnerMiner);
+                    if (itemMeta == null) {
+                        itemMeta = Bukkit.getItemFactory().getItemMeta(materialInHand);
                     }
-                    //添加playername
+
+                    PersistentDataContainer dataContainer = itemMeta.getPersistentDataContainer();
                     dataContainer.set(isSpawnerMiner, PersistentDataType.STRING, "true");
+                    itemInMainHand.setItemMeta(itemMeta);
+                    player.sendMessage(ChatColor.GREEN + "这个镐子现在可以挖掘刷怪笼了！");
                 } else {
                     player.sendMessage(ChatColor.RED + "手上的物品不是一个镐子");
                 }
@@ -147,5 +136,11 @@ public class Command implements TabExecutor {
         List<String> filteredList = new ArrayList<>(list);
         filteredList.removeIf(k -> !k.toLowerCase().startsWith(ll));
         return filteredList;
+    }
+
+    private boolean isPickaxe(Material material) {
+        return material == Material.DIAMOND_PICKAXE || material == Material.GOLDEN_PICKAXE
+                || material == Material.IRON_PICKAXE || material == Material.WOODEN_PICKAXE
+                || material == Material.NETHERITE_PICKAXE || material == Material.STONE_PICKAXE;
     }
 }

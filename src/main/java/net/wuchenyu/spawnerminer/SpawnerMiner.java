@@ -13,7 +13,7 @@ public final class SpawnerMiner extends JavaPlugin {
     public void onEnable() {
         instance = this;
         // Plugin startup logic
-        Bukkit.getPluginManager().registerEvents(new Listener() , this);
+        Bukkit.getPluginManager().registerEvents(new MiningListener() , this);
         getLogger().info("注册监听事件成功");
         Bukkit.getPluginCommand("spawner_miner").setExecutor(new Command());
     }

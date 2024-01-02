@@ -12,10 +12,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class Command implements TabExecutor {
 
@@ -35,6 +32,7 @@ public class Command implements TabExecutor {
         if (! (commandSender instanceof Player)) {
             SpawnerMiner.getInstance().getServer().getConsoleSender()
                     .sendMessage(ChatColor.RED + "抱歉，不允许控制台使用此命令！");
+            return true;
         }
 
         if(! commandSender.isOp()) {
@@ -56,6 +54,12 @@ public class Command implements TabExecutor {
                         itemMeta = Bukkit.getItemFactory().getItemMeta(materialInHand);
                     }
 
+                    List<String> lore = new ArrayList<>(itemMeta.hasLore() ? itemMeta.getLore() : Collections.emptyList());
+                    lore.add(ChatColor.GREEN + "刷怪笼挖掘者");
+                    lore.add(ChatColor.GREEN + "注意这个镐子在挖掘一次刷怪笼后就会消失！");
+                    itemMeta.setLore(lore);
+
+
                     PersistentDataContainer dataContainer = itemMeta.getPersistentDataContainer();
                     dataContainer.set(isSpawnerMiner, PersistentDataType.STRING, "true");
                     itemInMainHand.setItemMeta(itemMeta);
@@ -65,35 +69,47 @@ public class Command implements TabExecutor {
                 }
                 return true;
             }
-            case "check" : {
+            case "check": {
                 Player player = (Player) commandSender;
                 ItemStack itemInMainHand = player.getInventory().getItemInMainHand();
-                if (Objects.nonNull(itemInMainHand)) {
-                    ItemMeta itemMeta = itemInMainHand.getItemMeta();
+                ItemMeta itemMeta = itemInMainHand.getItemMeta();
+
+                // 确保 itemMeta 不为空
+                if (itemMeta != null) {
                     PersistentDataContainer dataContainer = itemMeta.getPersistentDataContainer();
+                    // 检查 dataContainer 不为空并获取数据
                     if (Objects.equals(dataContainer.get(isSpawnerMiner, PersistentDataType.STRING), "true")) {
                         player.sendMessage(ChatColor.GOLD + "这个物品可以挖掘刷怪笼");
                     } else {
                         player.sendMessage(ChatColor.GOLD + "这个物品不能挖掘刷怪笼");
                     }
                 } else {
-                    player.sendMessage(ChatColor.RED + "对不起你手上没有物品");
+                    player.sendMessage(ChatColor.GOLD + "这个物品不能挖掘刷怪笼");
                 }
                 return true;
             }
+
             case "remove" : {
                 Player player = (Player) commandSender;
                 ItemStack itemInMainHand = player.getInventory().getItemInMainHand();
-                if (Objects.nonNull(itemInMainHand)) {
-                    ItemMeta itemMeta = itemInMainHand.getItemMeta();
-                    PersistentDataContainer dataContainer = itemMeta.getPersistentDataContainer();
-                    if (Objects.equals(dataContainer.get(isSpawnerMiner, PersistentDataType.STRING), "true")) {
-                        //添加playername
-                        dataContainer.set(isSpawnerMiner, PersistentDataType.STRING, "false");
-                    }
+                ItemMeta itemMeta = itemInMainHand.getItemMeta();
+                PersistentDataContainer dataContainer = null;
+                if (itemMeta != null) {
+                    dataContainer = itemMeta.getPersistentDataContainer();
+                }
+                if (dataContainer != null && Objects.equals(dataContainer.get(isSpawnerMiner, PersistentDataType.STRING), "true")) {
+                    dataContainer.set(isSpawnerMiner, PersistentDataType.STRING, "false");
+                }
+                List<String> lore ;
+                if (itemMeta != null) {
+                    lore = new ArrayList<>(itemMeta.hasLore() ? itemMeta.getLore() : Collections.emptyList());
+                    lore.removeIf(line -> line.contains(ChatColor.GREEN + "刷怪笼挖掘者"));
+                    lore.removeIf(line -> line.contains(ChatColor.GREEN + "注意这个镐子在挖掘一次刷怪笼后就会消失！"));
+                    itemMeta.setLore(lore);
+                    itemInMainHand.setItemMeta(itemMeta);
                     player.sendMessage(ChatColor.GOLD + "已经移除这个物品的刷怪笼挖掘能力");
                 } else {
-                    player.sendMessage(ChatColor.RED + "对不起你手上没有物品");
+                    player.sendMessage(ChatColor.GOLD + "已经移除这个物品的刷怪笼挖掘能力");
                 }
                 return true;
             }
